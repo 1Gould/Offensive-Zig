@@ -105,7 +105,7 @@ pub fn main() !void {
         null,
         buf.len,
         win.MEM_COMMIT | win.MEM_RESERVE,
-        win.PAGE_READWRITE,
+        win.PAGE_EXECUTE_READWRITE,
     ) orelse {
         std.debug.print("VirtualAllocEx failed: {}\n", .{win.kernel32.GetLastError()});
         return error.VirtualAllocExFailed;
