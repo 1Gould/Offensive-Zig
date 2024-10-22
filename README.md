@@ -4,12 +4,12 @@ This repo contains code snippets from exploring usage of Zig in malware developm
 
 ## Description
 
-*Suspended Process Injection (Early Bird)*
+**Suspended Process Injection**
 - Create a process in suspended state
 - Allocate memory in the process
-- ResumeThread or CreateRemoteThread to execute the payload
+- CreateRemoteThread to execute the payload
 
-*Get Remote Process*
+**Get Remote Process**
 - Zig can't return multiple values/objects from a function, so the function returns a process struct with the ID and Handle
 - Takes in a constant utf8 array ([]const u8) and returns a ProcessIdentifier struct with:
     - processId: win.DWORD
@@ -18,6 +18,9 @@ This repo contains code snippets from exploring usage of Zig in malware developm
 - Due to Zig string handling (no null-terminated strings), the process names all have trailing 0s that need to be removed, so we cast to a pointer and create a slice the size of the process name we're looking for.
 - Attempts to use OpenProcess when the process is found and retrieve a handle
 - Populate and return the struct
+
+**Utility**
+- Contains general functions that may be useful when interacting with Windows or developing malware
 
 ## Using System Libraries
 
