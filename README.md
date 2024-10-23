@@ -151,9 +151,7 @@ Optimization Options:
 - `-D optimize=ReleaseSmall`
     - Size optimizations on and safety off
 
-`-f strip` removes debug information from the binary
-
-Interestingly they have an option `-f pie` which produces a Position Independent Executable - I haven't tested this yet.
+Interestingly they have a build option `b.pie` which produces a Position Independent Executable - I haven't tested this yet.
 
 See more options here: https://github.com/ziglang/zig/blob/master/build.zig
 
