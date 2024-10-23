@@ -2,6 +2,31 @@
 
 This repo contains code snippets from exploring usage of Zig in malware development.
 
+Inspired by:
+- [OffensiveNim](https://github.com/byt3bl33d3r/OffensiveNim
+- [Rust-For-Malware-Development](https://github.com/Whitecat18/Rust-for-Malware-Development)
+- [OffensiveRust](https://github.com/trickster0/OffensiveRust)
+- [OffensiveCpp](https://github.com/lsecqt/OffensiveCpp)
+
+## Table of Contents
+
+- [Offensive Zig](#offensive-zig)
+  - [Table of Contents](#table-of-contents)
+  - [Why Zig?](#why-zig)
+  - [Examples in this project](#description)
+  - [Using System Libraries](#using-system-libraries)
+  - [Building a Windows DLL](#building-a-windows-dll)
+  - [Build Options](#build-options)
+  - [References](#references)
+
+## Why Zig?
+
+- Flexible build / compilation options allow for us to cross-compile including C/C++ compatability.
+- Various options to reduce executable size and increase performance.
+- Interoperable with existing C/C++ toolchain.
+- Low level with memory manipulation, can also interface with inline assembly.
+- Challenge your programming skills (it's not for the easily frustrated).
+
 ## Description
 
 **Suspended Process Injection**
@@ -135,3 +160,12 @@ See more options here: https://github.com/ziglang/zig/blob/master/build.zig
 ### Custom
 
 We can also add our own build options, and instruct the compiler on how to compile the binary within the code. This can give us some flexible options when building implants / loaders for example. 
+
+## References
+
+Here are some references / other interesting repos to read through if you're interested in experimenting with offensive zig development.
+
+- https://github.com/darkr4y/OffensiveZig
+- https://github.com/GoNZooo/zig-win32
+- https://github.com/nrdmn/awesome-zig
+- https://github.com/Sobeston/injector
