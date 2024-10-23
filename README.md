@@ -1,4 +1,4 @@
-# Zig-Snippets
+# Offensive Zig
 
 This repo contains code snippets from exploring usage of Zig in malware development.
 
@@ -46,3 +46,92 @@ const exe = b.addExecutable(.{
     exe.linkSystemLibrary("user32");
 ```
 
+This can also be accomplished with the `-lc` command line argument.
+
+## Building a Windows DLL
+
+```
+const std = @import("std");
+const win = std.os.windows;
+
+const WINAPI = win.WINAPI;
+const HINSTANCE = win.HINSTANCE;
+const DWORD = win.DWORD;
+const LPVOID = win.LPVOID;
+const BOOL = win.BOOL;
+const HWND = win.HWND;
+const LPCSTR = win.LPCSTR;
+const UINT = win.UINT;
+
+const DLL_PROCESS_DETACH: DWORD = 0;
+const DLL_PROCESS_ATTACH: DWORD = 1;
+const DLL_THREAD_ATTACH: DWORD = 2;
+const DLL_THREAD_DETACH: DWORD = 3;
+
+
+extern "user32" fn MessageBoxA(hWnd: ?HWND, lpText: LPCSTR, lpCaption: LPCSTR, uType: UINT) callconv(WINAPI) i32;
+
+pub export fn _DllMainCRTStartup(hinstDLL: HINSTANCE, fdwReason: DWORD, lpReserved: LPVOID) BOOL {
+    _ = lpReserved;
+    _ = hinstDLL;
+    switch (fdwReason) {
+        DLL_PROCESS_ATTACH => {
+            _ = MessageBoxA(null, "Hello World!", "Zig", 0);
+        },
+        DLL_THREAD_ATTACH => {},
+        DLL_THREAD_DETACH => {},
+        DLL_PROCESS_DETACH => {},
+        else => {},
+    }
+    return 1;
+}
+```
+
+To compile:
+```
+//To make a static library
+zig build-lib test.zig -target x86_64-windows 
+//To make a shared library
+zig build-lib test.zig -dynamic -target x86_64-windows 
+```
+
+## Build Options
+
+### Default
+
+Some CPU architectures that you can cross-compile for:
+- x86_64
+- arm
+- aarch64
+- i386
+- riscv64
+- wasm32
+
+Some operating systems you can cross-compile for:
+- linux
+- macos
+- windows
+- freebsd
+- netbsd
+- dragonfly
+- UEFI
+
+Optimization Options:
+- `-D optimize=Debug`
+    - Optimizations off and safety on (default)
+- `-D optimize=ReleaseSafe`
+    - Optimizations on and safety on
+- `-D optimize=ReleaseFast`
+    - Optimizations on and safety off
+- `-D optimize=ReleaseSmall`
+    - Size optimizations on and safety off
+
+`-f strip` removes debug information from the binary
+
+Interestingly they have an option `-f pie` which produces a Position Independent Executable - I haven't tested this yet.
+
+See more options here: https://github.com/ziglang/zig/blob/master/build.zig
+
+### Custom
+
+We can also add our own build options, and instruct the compiler on how to compile the binary within the code. This can give us some flexible options when building implants / loaders for example. 
