@@ -3,7 +3,7 @@
 This repo contains code snippets from exploring usage of Zig in malware development.
 
 Inspired by:
-- [OffensiveNim](https://github.com/byt3bl33d3r/OffensiveNim
+- [OffensiveNim](https://github.com/byt3bl33d3r/OffensiveNim)
 - [Rust-For-Malware-Development](https://github.com/Whitecat18/Rust-for-Malware-Development)
 - [OffensiveRust](https://github.com/trickster0/OffensiveRust)
 - [OffensiveCpp](https://github.com/lsecqt/OffensiveCpp)
