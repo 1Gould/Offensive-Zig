@@ -151,13 +151,16 @@ Optimization Options:
 - `-D optimize=ReleaseSmall`
     - Size optimizations on and safety off
 
-Interestingly they have a build option `b.pie` which produces a Position Independent Executable - I haven't tested this yet.
-
 See more options here: https://github.com/ziglang/zig/blob/master/build.zig
 
 ### Custom
 
 We can also add our own build options, and instruct the compiler on how to compile the binary within the code. This can give us some flexible options when building implants / loaders for example. 
+
+## API Hashing
+
+Zig has the comptime keyword which can be used to get the hash at compile time. Not exactly the same implementation as C++ with the __TIME__ macro, external libraries cannot be called at compile time. Therefore in the build.zig file we can generate std.time.timestamp() as a file and embed it with @embedFile()to calculate the hash at compile time.
+
 
 ## References
 
