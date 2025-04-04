@@ -3,6 +3,11 @@ const win = @import("win");
 const time = std.time;
 const builtin = @import("builtin");
 
+// Pre-computed hashes at compile time
+const ASCII_HASH = HashStringDjb2A("Hello");
+const wide_str = [_:0]u16{ 'H', 'e', 'l', 'l', 'o' };
+const WIDE_HASH = HashStringDjb2W(&wide_str);
+
 // Compile-time seed using build timestamp
 fn RandomCompileTimeSeed() u32 {
     const timestamp_str = @embedFile("timestamp.txt");
@@ -42,11 +47,7 @@ fn HashStringDjb2A(comptime String: [*:0]const u8) u32 {
 }
 
 pub fn main() !void {
-    const ascii_hash = HashStringDjb2A("Hello, World!");
-    std.debug.print("ASCII Hash: {x}\n", .{ascii_hash});
-
-    // Example wide string
-    const wide_str = [_:0]u16{ 'H', 'e', 'l', 'l', 'o' };
-    const wide_hash = HashStringDjb2W(&wide_str);
-    std.debug.print("Wide Hash: {x}\n", .{wide_hash});
+    std.debug.print("Key: 0x{x}\n", .{g_KEY});
+    std.debug.print("ASCII Hash: 0x{x}\n", .{ASCII_HASH});
+    std.debug.print("Wide Hash: 0x{x}\n", .{WIDE_HASH});
 }

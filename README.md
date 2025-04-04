@@ -50,14 +50,14 @@ Inspired by:
 ## Using System Libraries
 
 There are some Windows functions that are not implemented in the std.os.windows library, ie. you cannot call them directly with Zig.  This was the issue I was facing when trying to make a GetRemoteProcess function, the CreateToolhelp32Snapshot is not implemented. Therefore we need to import library with C and use the function that way. To do this import the functions in your code like so:
-```
+```zig
 const c = @cImport({
     @cInclude("windows.h");
     @cInclude("tlhelp32.h");
 });
 ```
 Then inside your build.zig you need to link the executable to the libraries (libc):
-```
+```zig
 const exe = b.addExecutable(.{
         .name = "GetRemoteProcess",
         .root_source_file = b.path("src/main.zig"),
@@ -75,7 +75,7 @@ This can also be accomplished with the `-lc` command line argument.
 
 ## Building a Windows DLL
 
-```
+```zig
 const std = @import("std");
 const win = std.os.windows;
 
@@ -141,17 +141,38 @@ Some operating systems you can cross-compile for:
 - dragonfly
 - UEFI
 
+### OPSEC
+
 Optimization Options:
-- `-D optimize=Debug`
+- `-Doptimize=Debug`
     - Optimizations off and safety on (default)
-- `-D optimize=ReleaseSafe`
+- `-Doptimize=ReleaseSafe`
     - Optimizations on and safety on
-- `-D optimize=ReleaseFast`
+- `-Doptimize=ReleaseFast`
     - Optimizations on and safety off
-- `-D optimize=ReleaseSmall`
+- `-Doptimize=ReleaseSmall`
     - Size optimizations on and safety off
 
+For compiling these options are recommended for OPSEC:
+```
+zig build-exe test.zig -Doptimize=ReleaseSmall
+```
+
+Stripping debug information is done with the strip option in build.zig.
+```zig
+    const exe = b.addExecutable(.{
+        .name = "ApiHashing",
+        .root_source_file = b.path("src/main.zig"),
+        .target = target,
+        .optimize = optimize,
+        .strip = true,
+//      .singlethreaded = true,
+    });
+```
+
 See more options here: https://github.com/ziglang/zig/blob/master/build.zig
+
+An interesting option pie (Position Independent Executable) exists here: https://github.com/ziglang/zig/blob/e9220525e836810425e925722d1beaba9bfe9d91/build.zig#L179
 
 ### Custom
 
