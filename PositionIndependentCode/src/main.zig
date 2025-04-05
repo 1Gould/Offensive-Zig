@@ -1,5 +1,3 @@
-const std = @import("std");
-
 // Pre-computed hashes at compile time
 const ASCII_HASH = HashStringDjb2A("Hello");
 
@@ -41,7 +39,7 @@ fn HashStringDjb2A(comptime String: [*:0]const u8) u32 {
     return Hash;
 }
 
-pub fn main() !void {
-    std.debug.print("Key: 0x{x}\n", .{g_KEY});
-    std.debug.print("ASCII Hash: 0x{x}\n", .{ASCII_HASH});
+pub export fn shellcode_entry() callconv(.C) void {
+    _ = ASCII_HASH;
+    while (true) {}
 }
