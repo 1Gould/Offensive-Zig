@@ -5,8 +5,6 @@ const builtin = @import("builtin");
 
 // Pre-computed hashes at compile time
 const ASCII_HASH = HashStringDjb2A("Hello");
-const wide_str = [_:0]u16{ 'H', 'e', 'l', 'l', 'o' };
-const WIDE_HASH = HashStringDjb2W(&wide_str);
 
 // Compile-time seed using build timestamp
 fn RandomCompileTimeSeed() u32 {
@@ -49,5 +47,4 @@ fn HashStringDjb2A(comptime String: [*:0]const u8) u32 {
 pub fn main() !void {
     std.debug.print("Key: 0x{x}\n", .{g_KEY});
     std.debug.print("ASCII Hash: 0x{x}\n", .{ASCII_HASH});
-    std.debug.print("Wide Hash: 0x{x}\n", .{WIDE_HASH});
 }
