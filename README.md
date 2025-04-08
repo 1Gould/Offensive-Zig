@@ -34,18 +34,11 @@ Inspired by:
 - Allocate memory in the process
 - CreateRemoteThread to execute the payload
 
-**Get Remote Process**
-- Zig can't return multiple values/objects from a function, so the function returns a process struct with the ID and Handle
-- Takes in a constant utf8 array ([]const u8) and returns a ProcessIdentifier struct with:
-    - processId: win.DWORD
-    - handle: win.HANDLE
-- Converts the input to lowercase and all enumerated processes to lowercase
-- Due to Zig string handling (no null-terminated strings), the process names all have trailing 0s that need to be removed, so we cast to a pointer and create a slice the size of the process name we're looking for.
-- Attempts to use OpenProcess when the process is found and retrieve a handle
-- Populate and return the struct
-
 **Utility**
 - Contains general functions that may be useful when interacting with Windows or developing malware
+- GetRemoteProcessHandle & GetRemoteProcessId
+- GetRemoteProcessHandleW & GetRemoteProcessIdW
+- GetPEB() & GetTEB() using asm
 
 ## Using System Libraries
 
