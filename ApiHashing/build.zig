@@ -18,9 +18,8 @@ pub fn build(b: *std.Build) void {
     // create a timestamp file
     const timestamp = std.time.timestamp();
     const cwd = std.fs.cwd();
-    cwd.makeDir("src") catch {};
     const timestamp_file = cwd.createFile(
-        "src/timestamp.txt",
+        "timestamp.txt",
         .{ .truncate = true },
     ) catch unreachable;
     defer timestamp_file.close();
@@ -31,8 +30,6 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
-        .strip = true,
-        // .single_threaded = true,
     });
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
