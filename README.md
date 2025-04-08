@@ -185,9 +185,10 @@ Zig has the comptime keyword which can be used to get the hash at compile time. 
 
 ## References
 
-Here are some references / other interesting repos to read through if you're interested in experimenting with offensive zig development.
+Here are some references to help you get started:
 
 - https://github.com/darkr4y/OffensiveZig
+- https://github.com/0xsp-SRD/ZigStrike
+- https://github.com/michal-sladecek/zig_experiments
 - https://github.com/GoNZooo/zig-win32
-- https://github.com/nrdmn/awesome-zig
 - https://github.com/Sobeston/injector
