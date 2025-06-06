@@ -15,26 +15,27 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    // create a timestamp file
-    const timestamp = std.time.timestamp();
-    const cwd = std.fs.cwd();
-    const timestamp_file = cwd.createFile(
-        "timestamp.txt",
-        .{ .truncate = true },
-    ) catch unreachable;
-    defer timestamp_file.close();
-    timestamp_file.writer().print("{d}", .{timestamp}) catch unreachable;
-
-    const exe = b.addExecutable(.{
-        .name = "ApiHashing",
+    // We will also create a module for our other entry point, 'main.zig'.
+    const exe_mod = b.createModule(.{
+        // `root_source_file` is the Zig "entry point" of the module. If a module
+        // only contains e.g. external object files, you can make this `null`.
+        // In this case the main source file is merely a path, however, in more
+        // complicated build scripts, this could be a generated file.
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
+
+    // This creates another `std.Build.Step.Compile`, but this one builds an executable
+    // rather than a static library.
+    const exe = b.addExecutable(.{
+        .name = "ProcessHollowing",
+        .root_module = exe_mod,
+    });
+
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
     // step when running `zig build`).
-    exe.root_module.addImport("win32", b.createModule(.{ .root_source_file = b.path("lib/zigwin32/win32.zig") }));
     b.installArtifact(exe);
 
     // This *creates* a Run step in the build graph, to be executed when another
@@ -59,14 +60,4 @@ pub fn build(b: *std.Build) void {
     // This will evaluate the `run` step rather than the default, which is "install".
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
-
-    // Creates a step for unit testing. This only builds the test executable
-    // but does not run it.
-    const exe_unit_tests = b.addTest(.{
-        .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-    exe_unit_tests.root_module.addImport("win32", b.createModule(.{ .root_source_file = b.path("lib/zigwin32/win32.zig") }));
-    b.installArtifact(exe_unit_tests);
 }
