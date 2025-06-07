@@ -33,6 +33,8 @@ pub fn build(b: *std.Build) void {
         .root_module = exe_mod,
     });
 
+    exe.root_module.addImport("win32", b.createModule(.{ .root_source_file = b.path("lib/zigwin32/win32.zig") }));
+
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
     // step when running `zig build`).

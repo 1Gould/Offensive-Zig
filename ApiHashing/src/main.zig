@@ -126,50 +126,50 @@ fn getModuleHandleHash(comptime moduleName: []const u8) !?HINSTANCE {
     return null;
 }
 
-// pub fn traverseLoadedDlls(dba: std.mem.Allocator) !void {
-//     // Get the PEB and access the LDR field
-//     const peb = std.os.windows.peb();
+pub fn traverseLoadedDlls(dba: std.mem.Allocator) !void {
+    // Get the PEB and access the LDR field
+    const peb = std.os.windows.peb();
 
-//     // Get the first entry in the InMemoryOrderModuleList
-//     var modules_list = peb.Ldr.InLoadOrderModuleList.Flink;
+    // Get the first entry in the InMemoryOrderModuleList
+    var modules_list = peb.Ldr.InLoadOrderModuleList.Flink;
 
-//     std.debug.print("\n[+] Starting module search\n", .{});
+    std.debug.print("\n[+] Starting module search\n", .{});
 
-//     while (true) {
-//         const curr_module: *LDR_DATA_TABLE_ENTRY = @ptrCast(modules_list);
-//         // Get the current module name
+    while (true) {
+        const curr_module: *LDR_DATA_TABLE_ENTRY = @ptrCast(modules_list);
+        // Get the current module name
 
-//         // Get the name of the module from base dll name
-//         const module_name_utf16 = curr_module.BaseDllName.Buffer;
-//         const module_name_len = curr_module.BaseDllName.Length / @sizeOf(u16);
+        // Get the name of the module from base dll name
+        const module_name_utf16 = curr_module.BaseDllName.Buffer;
+        const module_name_len = curr_module.BaseDllName.Length / @sizeOf(u16);
 
-//         // check if the module name is empty
-//         if (module_name_utf16 == null or module_name_len == 0) {
-//             break;
-//         }
+        // check if the module name is empty
+        if (module_name_utf16 == null or module_name_len == 0) {
+            break;
+        }
 
-//         // we can print the module name by converting it to UTF-8
-//         const module_name_utf8 = try std.unicode.utf16LeToUtf8Alloc(dba, curr_module.BaseDllName.Buffer.?[0..module_name_len]);
+        // we can print the module name by converting it to UTF-8
+        const module_name_utf8 = try std.unicode.utf16LeToUtf8Alloc(dba, curr_module.BaseDllName.Buffer.?[0..module_name_len]);
 
-//         defer dba.free(module_name_utf8);
+        defer dba.free(module_name_utf8);
 
-//         std.debug.print("{s} : {}\n", .{ module_name_utf8, curr_module.DllBase });
+        std.debug.print("{s} : {}\n", .{ module_name_utf8, curr_module.DllBase });
 
-//         modules_list = modules_list.Flink;
-//     }
+        modules_list = modules_list.Flink;
+    }
 
-//     std.debug.print("----------------------------------------\n", .{});
-// }
+    std.debug.print("----------------------------------------\n", .{});
+}
 
 pub fn main() !void {
-    // var gpa = std.heap.DebugAllocator(.{}){};
-    // defer _ = gpa.deinit();
-    // const dba = gpa.allocator();
+    var gpa = std.heap.DebugAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const dba = gpa.allocator();
 
-    // traverseLoadedDlls(dba) catch |err| {
-    //     std.debug.print("Error traversing loaded DLLs: {}\n", .{err});
-    //     return err;
-    // };
+    traverseLoadedDlls(dba) catch |err| {
+        std.debug.print("Error traversing loaded DLLs: {}\n", .{err});
+        return err;
+    };
 
     // Example usage of getModuleHandleHash
     const handle = getModuleHandleHash("user32.dll") catch |err| {
