@@ -6,15 +6,59 @@ const DWORD = win.DWORD;
 const BOOL = win.BOOL;
 const WINAPI = win.WINAPI;
 const core = @import("core.zig");
+const win32 = @import("win32");
 
 // constants
 const PROCESS_NAME = "notepad.exe";
 const PROCESS_NAME_WIDE = "Notepad.exe";
-const module_name = "kernel32.dll";
 
 pub fn main() !void {
     var debug = std.heap.DebugAllocator(.{}){};
     const alloc = debug.allocator();
+    _ = alloc;
+
+    std.debug.print("-------------------------------------------------\nCurrent Process Information\n", .{});
+    const currentProcess = win.GetCurrentProcess();
+    const currentProcessId = win.GetCurrentProcessId();
+    const currentThread = win.GetCurrentThread();
+    const currentThreadId = win.GetCurrentThreadId();
+
+    std.debug.print("[+] Current Process Handle: {any}\n", .{currentProcess});
+    std.debug.print("[+] Current Process ID: {d}\n", .{currentProcessId});
+    std.debug.print("[+] Current Thread Handle: {any}\n", .{currentThread});
+    std.debug.print("[+] Current Thread ID: {d}\n", .{currentThreadId});
+
+    // win.WaitForSingleObject(handle: currentThread, milliseconds: 1000);
+    // win.WaitForSingleObjectEx(handle: currentThread, milliseconds: 1000, alertable: false);
+
+    // win.CreateProcessW(lpApplicationName: ?LPCWSTR, lpCommandLine: ?LPWSTR, lpProcessAttributes: ?*SECURITY_ATTRIBUTES, lpThreadAttributes: ?*SECURITY_ATTRIBUTES, bInheritHandles: BOOL, dwCreationFlags: DWORD, lpEnvironment: ?*anyopaque, lpCurrentDirectory: ?LPCWSTR, lpStartupInfo: *STARTUPINFOW, lpProcessInformation: *PROCESS_INFORMATION);
+
+    // win.LoadLibraryW(lpLibFileName: [*:0]const u16);
+
+    // win.peb();
+    // win.teb();
+
+    // some basic primitives
+    // win.VirtualProtect(lpAddress: ?LPVOID, dwSize: SIZE_T, flNewProtect: DWORD, lpflOldProtect: *DWORD);
+    // win.VirtualProtectEx(hProcess: HANDLE, lpAddress: ?LPVOID, dwSize: SIZE_T, flNewProtect: DWORD, lpflOldProtect: *DWORD);
+    // win.ReadProcessMemory(handle: HANDLE, addr: ?LPVOID, buffer: []u8);
+    // win.WriteProcessMemory(handle: HANDLE, addr: ?LPVOID, buffer: []const u8);
+
+    // win.ProcessBaseAddress(handle: HANDLE);
+
+    std.debug.print("-------------------------------------------------\nTesting GetModuleHandle()\n", .{});
+
+    const kernel32 = core.getModuleHandle("KERNEL32.DLL") catch |err| {
+        std.debug.print("Error getting module handle: {}\n", .{err});
+        return err;
+    };
+    std.debug.print("[+] Kernel32 Module Handle: {any}\n", .{kernel32});
+
+    const kernel32_a = win32.everything.GetModuleHandleA("kernel32.dll") orelse {
+        std.debug.print("Error getting module handle with GetModuleHandleA\n", .{});
+        return;
+    };
+    std.debug.print("[+] Kernel32 Module Handle (A): {any}\n", .{kernel32_a});
 
     var processId: u32 = undefined;
     var hProcess: HANDLE = undefined;
@@ -41,20 +85,6 @@ pub fn main() !void {
     std.debug.print("[+] GetRemoteProcessId() succeeded: {}\n", .{process_id_ascii});
 
     std.debug.print("-------------------------------------------------\nTesting GetRemoteProcessIdW()\n", .{});
-    // Get remote process id test
-    const PROCESS_NAME_UNICODE = unicode.utf8ToUtf16LeAllocZ(alloc, PROCESS_NAME_WIDE) catch undefined;
-
-    const process_id = core.GetRemoteProcessIdW(PROCESS_NAME_UNICODE) catch |err| {
-        std.debug.print("[-] GetRemoteProcessIdW() failed: {}\n", .{err});
-        return;
-    };
-    std.debug.print("[+] GetRemoteProcessIdW() succeeded: {}\n", .{process_id});
-
-    std.debug.print("-------------------------------------------------\nTesting GetRemoteProcessHandleW()\n", .{});
-    // Get remote process handle test (wide)
-    if (!core.GetRemoteProcessHandleW(PROCESS_NAME_UNICODE, &processId, &hProcess)) {
-        std.debug.print("[-] GetRemoteProcessHandleW() failed.\n", .{});
-    }
 
     if (core.GetHandleInformation(hProcess, &flags) == win.TRUE) {
         const pid = core.GetProcessId(hProcess);
@@ -64,17 +94,6 @@ pub fn main() !void {
     }
 
     std.debug.print("-------------------------------------------------\n", .{});
-
-    // Test GetModuleName
-    std.debug.print("Testing GetModuleName\n", .{});
-    const wide_name = try unicode.utf8ToUtf16LeAllocZ(alloc, module_name);
-    defer alloc.free(wide_name);
-
-    const base_address = if (core.GetModuleName(wide_name)) |addr| addr else {
-        std.debug.print("[-] Failed to find {s}\n", .{module_name});
-        return;
-    };
-    std.debug.print("[+] Successfully found {s} at 0x{x}\n", .{ module_name, @intFromPtr(base_address) });
-
-    std.debug.print("-------------------------------------------------\n", .{});
 }
+
+// Unit tests
