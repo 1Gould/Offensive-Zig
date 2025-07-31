@@ -45,37 +45,49 @@ pub fn main() !void {
     // win.WriteProcessMemory(handle: HANDLE, addr: ?LPVOID, buffer: []const u8);
 
     // win.ProcessBaseAddress(handle: HANDLE);
+    printNewline();
+    std.debug.print("Testing GetModuleHandle()\n", .{});
 
-    std.debug.print("-------------------------------------------------\nTesting GetModuleHandle()\n", .{});
-
+    // Custom get module handle implementation
     const kernel32 = core.getModuleHandle("KERNEL32.DLL") catch |err| {
         std.debug.print("Error getting module handle: {}\n", .{err});
         return err;
     };
     std.debug.print("[+] Kernel32 Module Handle: {any}\n", .{kernel32});
 
-    const kernel32_a = win32.everything.GetModuleHandleA("kernel32.dll") orelse {
+    const kernel32_a = win32.system.library_loader.GetModuleHandleA("kernel32.dll") orelse {
         std.debug.print("Error getting module handle with GetModuleHandleA\n", .{});
         return;
     };
     std.debug.print("[+] Kernel32 Module Handle (A): {any}\n", .{kernel32_a});
 
+    
+
+    // Custom get proc address implementation
+    const g_msgbox = win32.system.library_loader.GetProcAddress(kernel32, "MessageBoxA") orelse {
+        std.debug.print("Error getting proc address for MessageBoxA\n", .{});
+        return;
+    };
+    _ = g_msgbox;
+
     var processId: u32 = undefined;
     var hProcess: HANDLE = undefined;
+    var flags: DWORD = undefined;
 
-    std.debug.print("-------------------------------------------------\nTesting GetRemoteProcessHandle()\n", .{}); // Get remote process handle test
+    // Get remote process handle test
+    printNewline();
+    std.debug.print("Testing GetRemoteProcessHandle()\n", .{});
+
     if (!core.GetRemoteProcessHandle(PROCESS_NAME, &processId, &hProcess)) {
         std.debug.print("[-] GetRemoteProcessHandle() failed.\n", .{});
-    }
-    var flags: DWORD = undefined;
-    if (core.GetHandleInformation(hProcess, &flags) == win.TRUE) {
-        const pid = core.GetProcessId(hProcess);
-        std.debug.print("[+] Process Handle: {any} (Flags: 0x{x}, Verified PID: {d})\n", .{ hProcess, flags, pid });
     } else {
-        std.debug.print("[+] Process Handle: {any}\n", .{hProcess});
+        const pid = core.GetProcessId(hProcess);
+        _ = core.GetHandleInformation(hProcess, &flags);
+        std.debug.print("[+] Process Handle: {any} (Flags: 0x{x}, Verified PID: {d})\n", .{ hProcess, flags, pid });
     }
 
-    std.debug.print("-------------------------------------------------\nTesting GetRemoteProcessId()\n", .{});
+    printNewline();
+    std.debug.print("Testing GetRemoteProcessId()\n", .{});
 
     // Get remote process id test
     const process_id_ascii = core.GetRemoteProcessId(PROCESS_NAME) catch |err| {
@@ -83,17 +95,11 @@ pub fn main() !void {
         return;
     };
     std.debug.print("[+] GetRemoteProcessId() succeeded: {}\n", .{process_id_ascii});
-
-    std.debug.print("-------------------------------------------------\nTesting GetRemoteProcessIdW()\n", .{});
-
-    if (core.GetHandleInformation(hProcess, &flags) == win.TRUE) {
-        const pid = core.GetProcessId(hProcess);
-        std.debug.print("[+] Process Handle (wide): {any} (Flags: 0x{x}, Verified PID: {d})\n", .{ hProcess, flags, pid });
-    } else {
-        std.debug.print("[+] Process Handle (wide): {any}\n", .{hProcess});
-    }
-
-    std.debug.print("-------------------------------------------------\n", .{});
+    printNewline();
 }
 
 // Unit tests
+
+fn printNewline() void {
+    std.debug.print("-------------------------------------------------\n", .{});
+}

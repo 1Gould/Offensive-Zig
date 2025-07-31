@@ -16,40 +16,66 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     // We will also create a module for our other entry point, 'main.zig'.
-    const exe_mod = b.createModule(.{
+    const exe_mod = b.addExecutable(.{
         // `root_source_file` is the Zig "entry point" of the module. If a module
         // only contains e.g. external object files, you can make this `null`.
         // In this case the main source file is merely a path, however, in more
         // complicated build scripts, this could be a generated file.
+        .name = "PositionIndependentCode",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
+        .pic = true, // Position Independent Code
+        .strip = true, // Remove debug symbols
     });
 
-    // create a timestamp file
-    const timestamp = std.time.timestamp();
-    const cwd = std.fs.cwd();
-    cwd.makeDir("src") catch {};
-    const timestamp_file = cwd.createFile(
-        "src/timestamp.txt",
-        .{ .truncate = true },
-    ) catch unreachable;
-    defer timestamp_file.close();
-    timestamp_file.writer().print("{d}", .{timestamp}) catch unreachable;
+    // Configure for shellcode generation
+    exe_mod.entry = .{ .symbol_name = "shellcode" }; // Use our custom entry point
+    exe_mod.root_module.addImport("win32", b.createModule(.{ .root_source_file = b.path("lib/zigwin32/win32.zig") }));
 
-    // This creates another `std.Build.Step.Compile`, but this one builds an executable
-    // rather than a static library.
-    const obj = b.addObject(.{
-        .name = "PositionIndependentCode",
-        .root_module = exe_mod,
-        .strip = true,
-    });
+    // Disable stack protection and other features that might interfere with shellcode
+    exe_mod.root_module.stack_check = false;
+    exe_mod.root_module.stack_protector = false;
 
-    obj.root_module.stack_check = false;
-    obj.root_module.stack_protector = false;
+    b.installArtifact(exe_mod);
 
-    // This declares intent for the executable to be installed into the
-    // standard location when the user invokes the "install" step (the default
-    // step when running `zig build`).
-    b.installArtifact(obj);
+    // Add a step to extract the shellcode as a binary file
+    // const extract_shellcode = b.addSystemCommand(&.{ "powershell", "-Command", "& { $exe = Get-Content 'zig-out/bin/PositionIndependentCode.exe' -Raw -Encoding Byte; " ++
+    //     "$pe = [System.IO.File]::ReadAllBytes('zig-out/bin/PositionIndependentCode.exe'); " ++
+    //     "$dosHeader = [System.BitConverter]::ToUInt32($pe, 0x3C); " ++
+    //     "$ntHeader = $dosHeader + 4; " ++
+    //     "$textSectionOffset = $ntHeader + 0x18 + 0xF0 + 0x28; " ++
+    //     "$textRVA = [System.BitConverter]::ToUInt32($pe, $textSectionOffset + 0x0C); " ++
+    //     "$textSize = [System.BitConverter]::ToUInt32($pe, $textSectionOffset + 0x08); " ++
+    //     "$textFileOffset = [System.BitConverter]::ToUInt32($pe, $textSectionOffset + 0x14); " ++
+    //     "$shellcode = $pe[$textFileOffset..($textFileOffset + $textSize - 1)]; " ++
+    //     "[System.IO.File]::WriteAllBytes('zig-out/bin/shellcode.bin', $shellcode); " ++
+    //     "Write-Host 'Shellcode extracted to zig-out/bin/shellcode.bin' }" });
+    // extract_shellcode.step.dependOn(b.getInstallStep());
+
+    // const extract_step = b.step("extract", "Extract shellcode as binary file");
+    // extract_step.dependOn(&extract_shellcode.step);
+
+    // This *creates* a Run step in the build graph, to be executed when another
+    // step is evaluated that depends on it. The next line below will establish
+    // such a dependency.
+    const run_cmd = b.addRunArtifact(exe_mod);
+
+    // By making the run step depend on the install step, it will be run from the
+    // installation directory rather than directly from within the cache directory.
+    // This is not necessary, however, if the application depends on other installed
+    // files, this ensures they will be present and in the expected location.
+    run_cmd.step.dependOn(b.getInstallStep());
+
+    // This allows the user to pass arguments to the application in the build
+    // command itself, like this: `zig build run -- arg1 arg2 etc`
+    if (b.args) |args| {
+        run_cmd.addArgs(args);
+    }
+
+    // This creates a build step. It will be visible in the `zig build --help` menu,
+    // and can be selected like this: `zig build run`
+    // This will evaluate the `run` step rather than the default, which is "install".
+    const run_step = b.step("run", "Run the app");
+    run_step.dependOn(&run_cmd.step);
 }

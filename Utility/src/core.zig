@@ -876,7 +876,14 @@ pub extern "kernel32" fn GetProcessId(
     Process: HANDLE,
 ) callconv(WINAPI) DWORD;
 
-pub fn CreateSuspendedProcess(dwCreationFlags: DWORD, lpProcessName: ?LPWSTR, dwProcessId: *u32, hProcess: *HANDLE, hThread: *HANDLE) bool {
+// CreateCustomProcess creates a new process in a custom state.
+// IN : dwCreationFlags - Creation flags for the process.
+//      lpProcessName - The name/path of the process to create.
+// OUT: dwProcessId - A pointer to receive the process ID.
+//      hProcess - A pointer to receive the process handle.
+//      hThread - A pointer to receive the main thread handle.
+// RETURNS: true if the process was created successfully, false otherwise.
+pub fn CreateCustomProcess(dwCreationFlags: DWORD, lpProcessName: ?LPWSTR, dwProcessId: *u32, hProcess: *HANDLE, hThread: *HANDLE) bool {
 
     // Initialize structs
     var startup_info: STARTUPINFOW = std.mem.zeroes(STARTUPINFOW);
@@ -909,6 +916,9 @@ pub fn CreateSuspendedProcess(dwCreationFlags: DWORD, lpProcessName: ?LPWSTR, dw
     return true;
 }
 
+// GetRemoteProcessId retrieves the process ID of a remote process by its name.
+// IN : szProcessName - The name of the process to find.
+// RETURNS: The process ID if found, or an error if the process was not found.
 pub fn GetRemoteProcessId(szProcessName: []const u8) anyerror!DWORD {
     const szProcessNameLength = szProcessName.len;
 
@@ -947,6 +957,12 @@ pub fn GetRemoteProcessId(szProcessName: []const u8) anyerror!DWORD {
 
     return error.ProcessNotFound;
 }
+
+// GetRemoteProcessHandle retrieves a handle to a remote process by its name.
+// IN : szProcessName - The name of the process to find.
+// OUT: dwProcessId - A pointer to a variable that will receive the process ID.
+//      pProcess - A pointer to a HANDLE that will receive the process handle.
+// RETURNS: true if the process was found and the handle was retrieved, false otherwise.
 
 pub fn GetRemoteProcessHandle(szProcessName: []const u8, dwProcessId: *u32, pProcess: *HANDLE) bool {
     const szProcessNameLength = szProcessName.len;
@@ -1002,6 +1018,10 @@ pub fn GetRemoteProcessHandle(szProcessName: []const u8, dwProcessId: *u32, pPro
     return false;
 }
 
+//
+
+// GetPEB retrieves a pointer to the Process Environment Block (PEB) of the current process.
+// RETURNS: A pointer to the current process's PEB structure.
 pub fn GetPEB() *win.PEB {
     return asm volatile (
         \\ movq %%gs:0x60, %[result]
@@ -1009,6 +1029,8 @@ pub fn GetPEB() *win.PEB {
     );
 }
 
+// GetTEB retrieves a pointer to the Thread Environment Block (TEB) of the current thread.
+// RETURNS: A pointer to the current thread's TEB structure.
 pub fn GetTEB() *TEB {
     return asm volatile (
         \\ movq %%gs:0x30, %[result]
@@ -1016,6 +1038,9 @@ pub fn GetTEB() *TEB {
     );
 }
 
+// ComptimeWS converts a UTF-8 string to a UTF-16 wide string at compile time.
+// IN : str - The UTF-8 string to convert.
+// RETURNS: A UTF-16 wide string representation of the input string.
 // convert the string to a wide string UTF16-L in comptime
 pub fn ComptimeWS(comptime str: []const u8) []const u16 {
     @setEvalBranchQuota(100_000_000);
@@ -1026,6 +1051,9 @@ pub fn ComptimeWS(comptime str: []const u8) []const u16 {
     }
 }
 
+// traverseLoadedDLLs enumerates and prints all loaded DLLs in the current process.
+// This function walks through the InLoadOrderModuleList to display module information.
+// RETURNS: void or an error if memory allocation or string conversion fails.
 pub fn traverseLoadedDLLs() !void {
     const peb = std.os.windows.peb();
 
@@ -1046,6 +1074,9 @@ pub fn traverseLoadedDLLs() !void {
     }
 }
 
+// HashString computes a hash value for a given string using the djb2 algorithm.
+// IN : s - The string to hash.
+// RETURNS: A 64-bit hash value of the input string.
 pub fn HashString(s: []const u8) u64 {
     var hash: u64 = 5381;
     for (s) |d| {
@@ -1056,6 +1087,9 @@ pub fn HashString(s: []const u8) u64 {
     return hash;
 }
 
+// getModuleHandleHash retrieves a module handle by comparing hash values of module names.
+// IN : moduleName - The name of the module to find (compared using hash).
+// RETURNS: A handle to the module if found, null if not found, or an error.
 pub fn getModuleHandleHash(comptime moduleName: []const u8) !?HINSTANCE {
     // We compute the hash of the searched module at compile time using the comptime keyword
 
@@ -1085,6 +1119,9 @@ pub fn getModuleHandleHash(comptime moduleName: []const u8) !?HINSTANCE {
     return null;
 }
 
+// getModuleHandle retrieves a module handle by comparing module names directly.
+// IN : moduleName - The name of the module to find (exact string comparison).
+// RETURNS: A handle to the module if found, null if not found, or an error.
 pub fn getModuleHandle(comptime moduleName: []const u8) !?HINSTANCE {
     // We compute the hash of the searched module at compile time using the comptime keyword
 
